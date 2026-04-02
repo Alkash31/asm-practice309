@@ -1,6 +1,7 @@
 global _start
 
 section .data
+    ; memory:
     input_buf_size equ 128
 
     signed_prefix db 'SIGNED: '
@@ -28,6 +29,7 @@ section .data
     minus_char db '-'
 
 section .bss
+    ; memory:
     input_buf resb input_buf_size
     out_buf   resb 16
     a_value   resd 1
@@ -36,59 +38,72 @@ section .bss
 section .text
 
 _start:
+    ; I/O:
     mov eax, 3
     mov ebx, 0
     mov ecx, input_buf
     mov edx, input_buf_size
     int 0x80
 
+    ; logic:
     cmp eax, 0
     jle exit_program
 
+    ; memory:
     mov esi, input_buf
     mov edi, input_buf
     add edi, eax
 
+    ; parse:
     call parse_int32
     mov [a_value], eax
 
+    ; parse:
     call parse_int32
     mov [b_value], eax
 
+    ; I/O:
     mov ecx, signed_prefix
     mov edx, signed_prefix_len
     call print_text
 
+    ; logic:
     mov eax, [a_value]
     mov ebx, [b_value]
     call cmp_signed
     call print_text
     call print_newline
 
+    ; I/O:
     mov ecx, unsigned_prefix
     mov edx, unsigned_prefix_len
     call print_text
 
+    ; logic:
     mov eax, [a_value]
     mov ebx, [b_value]
     call cmp_unsigned
     call print_text
     call print_newline
 
+    ; I/O:
     mov ecx, max_signed_prefix
     mov edx, max_signed_prefix_len
     call print_text
 
+    ; logic:
     mov eax, [a_value]
     mov ebx, [b_value]
     call max_signed
     call print_signed_eax
     call print_newline
 
+    ; I/O:
     mov ecx, max_unsigned_prefix
     mov edx, max_unsigned_prefix_len
     call print_text
 
+    ; logic:
     mov eax, [a_value]
     mov ebx, [b_value]
     call max_unsigned
@@ -96,6 +111,7 @@ _start:
     call print_newline
 
 exit_program:
+    ; I/O:
     mov eax, 1
     xor ebx, ebx
     int 0x80
@@ -105,7 +121,8 @@ parse_int32:
     ; ESI = поточна позиція
     ; EDI = кінець буфера
     ; EAX = результат
-    
+
+    ; loops:
 .skip_spaces:
     cmp esi, edi
     jae .return_zero
@@ -126,6 +143,7 @@ parse_int32:
     jmp .skip_spaces
 
 .check_sign:
+    ; logic:
     xor ebx, ebx
     cmp esi, edi
     jae .return_zero
@@ -143,8 +161,10 @@ parse_int32:
     inc esi
 
 .parse_digits:
+    ; math:
     xor eax, eax
 
+    ; loops:
 .digit_loop:
     cmp esi, edi
     jae .apply_sign
@@ -164,6 +184,7 @@ parse_int32:
     jmp .digit_loop
 
 .apply_sign:
+    ; logic:
     test bl, bl
     jz .done
     neg eax
@@ -176,6 +197,7 @@ parse_int32:
     ret
 
 cmp_signed:
+    ; logic:
     ; EAX = a, EBX = b
     ; ECX = адреса тексту, EDX = довжина
 
@@ -200,6 +222,7 @@ cmp_signed:
     ret
 
 cmp_unsigned:
+    ; logic:
     ; EAX = a, EBX = b
     ; ECX = адреса тексту, EDX = довжина
 
@@ -224,6 +247,7 @@ cmp_unsigned:
     ret
 
 max_signed:
+    ; logic:
     ; EAX = a, EBX = b
     ; EAX = max_signed(a,b)
 
@@ -236,6 +260,7 @@ max_signed:
     ret
 
 max_unsigned:
+    ; logic:
     ; EAX = a, EBX = b
     ; EAX = max_unsigned(a,b)
 
@@ -248,6 +273,7 @@ max_unsigned:
     ret
 
 print_text:
+    ; I/O:
     ; ECX = адреса
     ; EDX = довжина
 
@@ -267,12 +293,15 @@ print_text:
     ret
 
 print_newline:
+    ; I/O:
     mov ecx, newline
     mov edx, 1
     call print_text
     ret
 
 print_signed_eax:
+    ; I/O:
+    ; EAX = signed 32-bit
 
     push ebx
     push ecx
@@ -311,6 +340,8 @@ print_signed_eax:
     ret
 
 print_unsigned_eax:
+    ; I/O:
+    ; EAX = unsigned 32-bit
 
     push eax
     push ebx
@@ -329,23 +360,27 @@ print_unsigned_eax:
     mov ecx, 1
     jmp .print_result
 
+    ; loops:
 .convert:
 .convert_loop:
-    
+    ; math:
     xor edx, edx
     mov ebx, 10
     div ebx
 
     add dl, '0'
 
+    ; memory:
     dec edi
     mov [edi], dl
     inc ecx
 
+    ; logic:
     test eax, eax
     jnz .convert_loop
 
 .print_result:
+    ; I/O:
     mov edx, ecx
     mov ecx, edi
     call print_text
