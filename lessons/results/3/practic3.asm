@@ -8,7 +8,7 @@ section .text
 
 _start:
     ; logic:
-    ; mov eax це вписуємо число
+    ; mov eax вписуємо число
      mov eax, 123456
 
     cmp eax, 0
